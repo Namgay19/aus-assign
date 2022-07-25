@@ -2,61 +2,55 @@ import re
 import task3
 import task4
 
-class User:
-    saved_users = []
-    def __init__(self, username, mobile, password, password_confirmation, dob):
-        self.username = username
-        self.mobile = mobile
-        self.password = password
-        self.password_confirmation = password_confirmation
-        self.dob = dob
-
-    def invalid_password(self):
-        special_characters = ["@", "#", "$"]
-        if not self.password[0].isalpha():
-            return True
-        elif not self.password[-1].isnumeric():
-            return True  
-        elif not any(x in self.password for x in special_characters):
-            return True
-        
-        return False 
-
-    def invalid_dob(self):
-        format = re.compile('\d{2}/\d{2}/\d{4}')
-        if format.match(self.dob) is None:
-            return True
-        else:
-            return False 
-
-    def invalid_age(self):
-        year = self.dob.split("/")[-1]
-        if (2022 - int(year)) < 18:
-            return True
-        else:
-            return False 
-
-
-    def valid_input(self):
-        if self.mobile[0] != "0":
-            return False, "Your mobile number should start with 0."
-        if len(self.mobile) != 10:
-            return False, "Your mobile number should have 10 digits." 
-        if self.invalid_password():
-            return False, "Your password should start with an alphabet, contain one of(@/#/$) and end with numeric."
-        if self.password != self.password_confirmation:
-            return False, "Your passwords are not matching."
-        if self.invalid_dob():
-            return False, "Your DOB is not in the correct format."
-        if self.invalid_age():
-            return False, "Your age should be atleast 18." 
-
-        return True, "You have successfully signed up."      
-
-
 user_choice = 1      # to keep track of the option selected by the user
 saved_users = []     # to save succesfully signed up users in a list
 
+# validate sign up inputs and return Boolean flag and message
+def validate_input(mobile, password, password_confirmation, dob):
+    if mobile[0] != "0":
+        return False, "Your mobile number should start with 0."
+    if len(mobile) != 10:
+        return False, "Your mobile number should have 10 digits." 
+    if invalid_password(password):
+        return False, "Your password should start with an alphabet, contain one of(@/#/$) and end with numeric."
+    if password != password_confirmation:
+        return False, "Your passwords are not matching."
+    if invalid_dob(dob):
+        return False, "Your DOB is not in the correct format."
+    if invalid_age(dob):
+        return False, "Your age should be atleast 18." 
+
+    return True, "You have successfully signed up."   
+
+# validate password is in correct format or not
+def invalid_password(password):
+    special_characters = ["@", "#", "$"]
+    if not password[0].isalpha():
+        return True
+    elif not password[-1].isnumeric():
+        return True  
+    elif not any(x in password for x in special_characters):
+        return True
+        
+    return False 
+
+# validate dob format using regex
+def invalid_dob(dob):
+    format = re.compile('\d{2}/\d{2}/\d{4}')
+    if format.match(dob) is None:
+        return True
+    else:
+        return False 
+
+# validate age from dob
+def invalid_age(dob):
+    year = dob.split("/")[-1]
+    if (2022 - int(year)) < 18:
+        return True
+    else:
+        return False 
+
+# keep the application running till the user chooses option 3
 while user_choice != "3":
     user_choice = input("""Please enter 1 for sign up.
 Please enter 2 for log in.
@@ -67,30 +61,27 @@ Please enter 3 to exit.
     successful_login = False  # to check if log in was successfull or not
     attempt_count = 0   # to keep track of login attempts
 
+    # run this if sign up is selected and run it till the correct details are entered
     while user_choice == "1" and valid == False:
-        username = input("Please enter your name: ")        
-        
+        username = input("Please enter your name: ")           
         mobile = input("Please enter your mobile number: ")
-
         password = input("Please enter your password: ")
-
         password_confirmation = input("Please confirm your password: ")
-
         dob = input("Please enter your Date of Birth # DD/MM/YYYY (No Space): ")
 
-        user = User(username, mobile, password, password_confirmation, dob)
-
-        valid, message = user.valid_input()
+        valid, message = validate_input(mobile, password, password_confirmation, dob)
         
         if valid:
-            user.saved_users.append(user)
+            user = { "username": username, "mobile": mobile, "password": password, "password_confirmation": password_confirmation, "dob": dob }
+            saved_users.append(user)
             print(message)
         else:
             print(message)
-            print("Please start again:")
+            print("Please start again")
 
+    # run this if login is selected and till the user has logged in or has more than 3 failed attempts
     while user_choice == "2" and successful_login == False:      
-        successful_login = task3.login(user)
+        successful_login, user = task3.login(saved_users)
         if successful_login:
             task4.reset_password(user)
         else:
@@ -98,7 +89,7 @@ Please enter 3 to exit.
         
         if attempt_count >= 3:
             successful_login = True
-            task4.forced_reset_password(user)
+            task4.forced_reset_password(saved_users)
        
 else:
     print("Thank you for using the Application.")
